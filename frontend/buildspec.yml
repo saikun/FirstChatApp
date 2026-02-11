@@ -6,17 +6,26 @@ phases:
       nodejs: 20
     on-failure: ABORT
     commands:
+      - echo "Debug Listing root directory in install phase"
+      - ls -la
+      - echo "Debug Checking frontend directory"
+      - ls -la frontend || echo "frontend dir not found in install"
       - echo Installing dependencies...
       - cd frontend
       - npm install
   build:
     on-failure: ABORT
     commands:
+      - echo "Debug Listing root directory in build phase"
+      - cd $CODEBUILD_SRC_DIR
+      - ls -la
       - echo Build started...
       - cd frontend
       - npm run build
   post_build:
     commands:
+      - echo "Debug Listing directory in post_build"
+      - ls -la
       - echo Syncing with S3...
       - cd frontend
       - aws s3 sync dist/ s3://$FRONTEND_BUCKET_NAME --delete
