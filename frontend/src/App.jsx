@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, MessageCircle } from 'lucide-react'
 import './App.css'
 
-// Hardcoded ALB URL as requested
-const API_BASE_URL = 'http://chatappalb-1932012177.ap-northeast-1.elb.amazonaws.com/api'
+// Use relative path for CloudFront proxy
+const API_BASE_URL = '/api'
 console.log('API Base URL:', API_BASE_URL)
 
 function App() {

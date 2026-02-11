@@ -30,19 +30,23 @@ aws cloudformation deploy `
     --stack-name chat-database `
     --template-file infrastructure/database.yaml
 
-# 3. Frontend Hosting Stack
-Write-Host "Step 3: Deploying Frontend Hosting Stack..." -ForegroundColor Yellow
-aws cloudformation deploy `
-    --stack-name chat-frontend `
-    --template-file infrastructure/frontend-hosting.yaml
-
-# 4. Backend Service Stack
-Write-Host "Step 4: Deploying Backend Service Stack..." -ForegroundColor Yellow
+# 3. Backend Service Stack (Deployed before Frontend for ALB DNS)
+Write-Host "Step 3: Deploying Backend Service Stack..." -ForegroundColor Yellow
 aws cloudformation deploy `
     --stack-name chat-backend `
     --template-file infrastructure/backend-service.yaml `
     --parameter-overrides VPCId=$vpcId Subnet1Id=$subnet1Id Subnet2Id=$subnet2Id `
     --capabilities CAPABILITY_IAM
+
+# Get ALB DNS for Frontend
+$backendDomain = aws cloudformation describe-stacks --stack-name chat-backend --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerDNS'].OutputValue" --output text
+
+# 4. Frontend Hosting Stack
+Write-Host "Step 4: Deploying Frontend Hosting Stack..." -ForegroundColor Yellow
+aws cloudformation deploy `
+    --stack-name chat-frontend `
+    --template-file infrastructure/frontend-hosting.yaml `
+    --parameter-overrides BackendDomain=$backendDomain
 
 # 5. CI/CD Pipeline Stack
 Write-Host "Step 5: Deploying CI/CD Pipeline Stack..." -ForegroundColor Yellow

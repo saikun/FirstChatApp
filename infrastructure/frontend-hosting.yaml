@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Frontend Hosting (S3 + CloudFront) for Chat App
 
+Parameters:
+  BackendDomain:
+    Type: String
+    Description: Domain name of the Backend ALB
+
 Resources:
   FrontendBucket:
     Type: AWS::S3::Bucket
@@ -40,6 +45,12 @@ Resources:
             Id: S3Origin
             S3OriginConfig:
               OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+          - DomainName: !Ref BackendDomain
+            Id: ALBOrigin
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
         Enabled: true
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -49,6 +60,20 @@ Resources:
             QueryString: false
             Cookies:
               Forward: none
+        CacheBehaviors:
+          - PathPattern: '/api/*'
+            TargetOriginId: ALBOrigin
+            ViewerProtocolPolicy: allow-all # ALB is HTTP
+            AllowedMethods: [HEAD, DELETE, POST, GET, OPTIONS, PUT, PATCH]
+            CachedMethods: [HEAD, GET]
+            ForwardedValues:
+              QueryString: true
+              Headers: ['*']
+              Cookies:
+                Forward: all
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
 
 Outputs:
   DistributionDomainName:
