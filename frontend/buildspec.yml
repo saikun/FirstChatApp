@@ -12,10 +12,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - echo "Build started on date"
-      - echo "Current directory: $(pwd)"
-      - ls -la
-      - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
+      - echo Build started...
       - cd frontend
       - npm run build
   post_build:

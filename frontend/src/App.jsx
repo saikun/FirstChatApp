@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, MessageCircle } from 'lucide-react'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+// Hardcoded ALB URL as requested
+const API_BASE_URL = 'http://chatappalb-1932012177.ap-northeast-1.elb.amazonaws.com/api'
 console.log('API Base URL:', API_BASE_URL)
 
 function App() {
