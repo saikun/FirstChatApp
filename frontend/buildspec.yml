@@ -27,6 +27,7 @@ phases:
       - echo "Debug Listing directory in post_build"
       - ls -la
       - echo Syncing with S3...
+      - cd $CODEBUILD_SRC_DIR
       - cd frontend
       - aws s3 sync dist/ s3://$FRONTEND_BUCKET_NAME --delete
       - echo Invalidating CloudFront cache...
