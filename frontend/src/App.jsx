@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, MessageCircle } from 'lucide-react'
 import './App.css'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
 function App() {
   const [messages, setMessages] = useState([])

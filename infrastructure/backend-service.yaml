@@ -4,10 +4,58 @@ Description: Backend Service (ECS Fargate) for Chat App
 Parameters:
   VPCId:
     Type: AWS::EC2::VPC::Id
-  SubnetId:
+  Subnet1Id:
+    Type: String
+  Subnet2Id:
     Type: String
 
 Resources:
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP to ALB
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: ChatAppALB
+      Subnets:
+        - !Ref Subnet1Id
+        - !Ref Subnet2Id
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Scheme: internet-facing
+      Type: application
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: ChatAppTargetGroup
+      VpcId: !Ref VPCId
+      Port: 5000
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckPath: /api/messages
+      HealthCheckIntervalSeconds: 30
+      Matcher:
+        HttpCode: '200-499'
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -64,13 +112,13 @@ Resources:
   ContainerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow access to Backend
+      GroupDescription: Allow access to Backend from ALB
       VpcId: !Ref VPCId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 5000
           ToPort: 5000
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -97,6 +145,7 @@ Resources:
 
   ECSService:
     Type: AWS::ECS::Service
+    DependsOn: Listener
     Properties:
       Cluster: !Ref ECSCluster
       ServiceName: ChatAppBackendService
@@ -107,10 +156,17 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           Subnets:
-            - !Ref SubnetId
+            - !Ref Subnet1Id
+            - !Ref Subnet2Id
           SecurityGroups:
             - !Ref ContainerSecurityGroup
+      LoadBalancers:
+        - ContainerName: backend
+          ContainerPort: 5000
+          TargetGroupArn: !Ref TargetGroup
 
 Outputs:
   ServiceUrl:
-    Value: !Sub 'http://${ECSService.Name}.local:5000' # Placeholder, usually uses ALB
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
+    Export:
+      Name: ChatAppBackendUrl

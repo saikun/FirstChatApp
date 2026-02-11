@@ -66,6 +66,8 @@ Resources:
             Value: !ImportValue ChatAppFrontendBucket
           - Name: CLOUDFRONT_DISTRIBUTION_ID
             Value: !ImportValue ChatAppCloudFrontId
+          - Name: VITE_API_BASE_URL
+            Value: !ImportValue ChatAppBackendUrl
       Source:
         Type: CODEPIPELINE
         BuildSpec: frontend/buildspec.yml
