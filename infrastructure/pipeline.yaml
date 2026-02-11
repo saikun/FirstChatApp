@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CI/CD Pipeline for Chat App
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: 'user/chat-app'
+  GitHubBranch:
+    Type: String
+    Default: 'main'
+  ConnectionArn:
+    Type: String
+    Description: 'CodeStar Connection ARN for GitHub'
+
+Resources:
+  PipelineBucket:
+    Type: AWS::S3::Bucket
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # Simplified for demo, should be scoped
+
+  BackendBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: ChatAppBackendBuild
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: IMAGE_REPO_NAME
+            Value: chat-backend
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref 'AWS::AccountId'
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: backend/buildspec.yml
+
+  FrontendBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: ChatAppFrontendBuild
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        EnvironmentVariables:
+          - Name: FRONTEND_BUCKET_NAME
+            Value: !ImportValue ChatAppFrontendBucket
+          - Name: CLOUDFRONT_DISTRIBUTION_ID
+            Value: !ImportValue ChatAppCloudFrontId
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: frontend/buildspec.yml
+
+  ChatPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: '1'
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ConnectionArn: !Ref ConnectionArn
+                FullRepositoryId: !Ref GitHubRepo
+                BranchName: !Ref GitHubBranch
+        - Name: Build
+          Actions:
+            - Name: BackendBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BackendBuildOutput
+              Configuration:
+                ProjectName: !Ref BackendBuildProject
+            - Name: FrontendBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ProjectName: !Ref FrontendBuildProject
+        - Name: Deploy
+          Actions:
+            - Name: BackendDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: ECS
+                Version: '1'
+              InputArtifacts:
+                - Name: BackendBuildOutput
+              Configuration:
+                ClusterName: ChatAppCluster
+                ServiceName: ChatAppBackendService
+                FileName: imagedefinitions.json
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess

@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Backend Service (ECS Fargate) for Chat App
+
+Parameters:
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Type: String
+
+Resources:
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: chat-backend
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: ChatAppCluster
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/chat-app-backend
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/ChatMessages'
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access to Backend
+      VpcId: !Ref VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          CidrIp: 0.0.0.0/0
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: chat-app-backend
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '256'
+      Memory: '512'
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/chat-backend:latest'
+          PortMappings:
+            - ContainerPort: 5000
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: ecs
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      LaunchType: FARGATE
+      DesiredCount: 1
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref SubnetId
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+
+Outputs:
+  ServiceUrl:
+    Value: !Sub 'http://${ECSService.Name}.local:5000' # Placeholder, usually uses ALB

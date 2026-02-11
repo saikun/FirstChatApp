@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Frontend Hosting (S3 + CloudFront) for Chat App
+
+Resources:
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'chat-app-frontend-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: 'OAI for Chat App'
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${FrontendBucket}/*'
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-http
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+
+Outputs:
+  DistributionDomainName:
+    Value: !GetAtt Distribution.DomainName
+  DistributionId:
+    Value: !Ref Distribution
+    Export:
+      Name: ChatAppCloudFrontId
+  BucketName:
+    Value: !Ref FrontendBucket
+    Export:
+      Name: ChatAppFrontendBucket

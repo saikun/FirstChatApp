@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    on-failure: ABORT
+    commands:
+      - echo Installing dependencies...
+      - cd frontend
+      - npm install
+  build:
+    on-failure: ABORT
+    commands:
+      - echo Build started on `date`
+      - npm run build
+  post_build:
+    commands:
+      - echo Syncing with S3...
+      - aws s3 sync dist/ s3://$FRONTEND_BUCKET_NAME --delete
+      - echo Invalidating CloudFront cache...
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"

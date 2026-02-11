@@ -1,0 +1,226 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 80vh;
+  width: 100%;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.login-card {
+  padding: 3rem;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-card h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-card p {
+  color: #94a3b8;
+  margin-bottom: 2rem;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.input-group:focus-within {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+.input-group input {
+  background: transparent;
+  border: none;
+  padding: 1rem;
+  color: white;
+  width: 100%;
+  outline: none;
+}
+
+.primary-button {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.primary-button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.glass-header {
+  padding: 1rem 2rem;
+  margin-bottom: 2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-content h2 {
+  margin: 0;
+  flex-grow: 1;
+  text-align: left;
+  font-size: 1.25rem;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 100px;
+  font-size: 0.875rem;
+}
+
+.chat-window {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messages-list {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-item {
+  display: flex;
+  width: 100%;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 0.8rem 1.2rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  text-align: left;
+  position: relative;
+}
+
+.own-message {
+  justify-content: flex-end;
+}
+
+.own-message .message-bubble {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+
+.message-user {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+  color: #94a3b8;
+}
+
+.own-message .message-user {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.message-text {
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.message-time {
+  font-size: 0.65rem;
+  margin-top: 0.3rem;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.message-input-area {
+  padding: 1.5rem;
+  display: flex;
+  gap: 0.8rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.message-input-area input {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.8rem 1.2rem;
+  color: white;
+  outline: none;
+}
+
+.send-button {
+  background: #3b82f6;
+  border: none;
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.send-button:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+/* Custom Scrollbar */
+.messages-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
