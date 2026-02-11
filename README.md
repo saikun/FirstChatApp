@@ -19,11 +19,48 @@ This is a modern, real-time-like chat application built with React (Vite) and Fl
 2. Install dependencies: `npm install`
 3. Run dev server: `npm run dev` (Default: http://localhost:5173)
 
-## Deployment (AWS CloudFormation)
-The `infrastructure/` directory contains templates for:
-1. `network.yaml`: VPC and Subnets.
-2. `backend-service.yaml`: ECS Fargate service.
-3. `frontend-hosting.yaml`: S3 + CloudFront.
+## Deployment to AWS (CloudFormation)
+
+Follow these steps to deploy the application to AWS. You will need the AWS CLI configured.
+
+### 1. Preparation
+- Pushed your code to a GitHub repository.
+- Created a CodeStar Connection in the AWS Console and noted its **Connection ARN**.
+
+### 2. Deploy Stacks (Order matters)
+
+Run the following commands from the root directory:
+
+#### A. Network Stack
+```bash
+aws cloudformation deploy --stack-name chat-network --template-file infrastructure/network.yaml
+```
+
+#### B. Database Stack
+```bash
+aws cloudformation deploy --stack-name chat-database --template-file infrastructure/database.yaml
+```
+
+#### C. Frontend Hosting Stack
+```bash
+aws cloudformation deploy --stack-name chat-frontend --template-file infrastructure/frontend-hosting.yaml
+```
+
+#### D. Backend Service Stack
+*Note: You need the VPC and Subnet ID from the Network Stack output (or Console).*
+```bash
+aws cloudformation deploy --stack-name chat-backend --template-file infrastructure/backend-service.yaml --parameter-overrides VPCId=<VPC_ID> SubnetId=<SUBNET_ID> --capabilities CAPABILITY_IAM
+```
+
+#### E. CI/CD Pipeline Stack
+```bash
+aws cloudformation deploy --stack-name chat-pipeline --template-file infrastructure/pipeline.yaml --parameter-overrides ConnectionArn=<CONNECTION_ARN> GitHubRepo=<USERNAME/REPO> --capabilities CAPABILITY_IAM
+```
+
+### 3. Verification
+- Once the pipeline stack is deployed, the first build will start automatically.
+- Check the **AWS CodePipeline** console to monitor progress.
+- Once completed, access the UI via the CloudFront URL (output of `chat-frontend` stack).
 
 ## Tech Stack
 - **Frontend**: React, Vite, Framer Motion, Lucide React, Axios.

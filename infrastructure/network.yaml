@@ -25,9 +25,10 @@ Resources:
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
-    Tags:
-      - Key: Name
-        Value: ChatAppIGW
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ChatAppIGW
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
