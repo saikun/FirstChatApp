@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 5000
 
 # Use Gunicorn as production server
-CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["python", "-m", "gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "app:app"]

@@ -4,3 +4,4 @@ boto3
 gunicorn
 flask-socketio
 simple-websocket
+eventlet
