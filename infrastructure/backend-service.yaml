@@ -45,6 +45,13 @@ Resources:
       HealthCheckIntervalSeconds: 30
       Matcher:
         HttpCode: '200-499'
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: 'true'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: '86400'
 
   Listener:
     Type: AWS::ElasticLoadBalancingV2::Listener

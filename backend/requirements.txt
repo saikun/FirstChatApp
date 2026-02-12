@@ -2,3 +2,5 @@ flask
 flask-cors
 boto3
 gunicorn
+flask-socketio
+simple-websocket

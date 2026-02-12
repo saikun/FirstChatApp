@@ -2,9 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, MessageCircle } from 'lucide-react'
+import { io } from 'socket.io-client'
 import './App.css'
 
 // Use relative path for CloudFront proxy
+// But for Socket.IO we need to be careful. 
+// If we use relative path, it tries to connect to the same origin.
+// In dev (vite), we might need to point to backend if not proxied.
+// However, assuming standard setup where /api is proxied or we want to connect to root.
+// Let's use relative path for socket as well, assuming Nginx/CloudFront handles /socket.io
 const API_BASE_URL = '/api'
 console.log('API Base URL:', API_BASE_URL)
 
@@ -14,6 +20,7 @@ function App() {
   const [username, setUsername] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const messagesEndRef = useRef(null)
+  const socketRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -21,6 +28,26 @@ function App() {
 
   useEffect(() => {
     if (isLoggedIn) {
+      // Initialize Socket.IO
+      // If we are in dev and backend is on 5000, we might need explicit URL if proxy isn't set up for WS used by Vite
+      // But typically with CloudFront/ALB, relative path works best.
+      socketRef.current = io()
+
+      socketRef.current.on('connect', () => {
+        console.log('Connected to WebSocket')
+      })
+
+      socketRef.current.on('new_message', (message) => {
+        setMessages((prevMessages) => {
+          // Avoid duplicates if any
+          if (prevMessages.some(m => m.id === message.id)) {
+            return prevMessages
+          }
+          return [...prevMessages, message].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+        })
+      })
+
+      // Initial fetch to get history
       const fetchMessages = async () => {
         try {
           const response = await axios.get(`${API_BASE_URL}/messages`)
@@ -31,8 +58,12 @@ function App() {
       }
 
       fetchMessages()
-      const interval = setInterval(fetchMessages, 2000)
-      return () => clearInterval(interval)
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect()
+        }
+      }
     }
   }, [isLoggedIn])
 
@@ -43,6 +74,12 @@ function App() {
   const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!inputText.trim()) return
+
+    // Optimistic update is tricky with Socket.IO if we want to rely on server timestamp/ID
+    // But we can just send it and wait for the broadcast back.
+    // Or we can send via HTTP POST as before (which now broadcasts)
+    // Let's use HTTP POST as established in the plan to keep it simple and robust with the existing API.
+    // The server will broadcast the message via WebSocket.
 
     try {
       await axios.post(`${API_BASE_URL}/messages`, {
