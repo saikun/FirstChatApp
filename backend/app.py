@@ -13,16 +13,22 @@ CORS(app)
 TABLE_NAME = os.environ.get('DYNAMODB_TABLE', 'ChatMessages')
 REGION = os.environ.get('AWS_REGION', 'ap-northeast-1')
 
+import traceback
+
 # Initialize DynamoDB client
 # Note: For local development, this requires valid AWS credentials or a local DynamoDB instance
 try:
     dynamodb = boto3.resource('dynamodb', region_name=REGION)
     table = dynamodb.Table(TABLE_NAME)
     # Check if table exists
-    table.table_status
+    table.load()
     USE_DYNAMO = True
+    print(f"Successfully connected to DynamoDB table: {TABLE_NAME}")
 except Exception as e:
-    print(f"DynamoDB not available, falling back to in-memory storage. Error: {e}")
+    print(f"ERROR: Failed to connect to DynamoDB.")
+    print(f"Region: {REGION}, Table: {TABLE_NAME}")
+    print(f"Error Details: {str(e)}")
+    traceback.print_exc()
     USE_DYNAMO = False
     messages = [
         {"id": "1", "user": "System", "text": "Welcome to the chat! (In-Memory Fallback)", "timestamp": datetime.datetime.now().isoformat()}
