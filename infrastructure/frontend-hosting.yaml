@@ -61,6 +61,19 @@ Resources:
             Cookies:
               Forward: none
         CacheBehaviors:
+          - PathPattern: '/socket.io/*'
+            TargetOriginId: ALBOrigin
+            ViewerProtocolPolicy: allow-all
+            AllowedMethods: [HEAD, DELETE, POST, GET, OPTIONS, PUT, PATCH]
+            CachedMethods: [HEAD, GET]
+            ForwardedValues:
+              QueryString: true
+              Headers: ['*']
+              Cookies:
+                Forward: all
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
           - PathPattern: '/api/*'
             TargetOriginId: ALBOrigin
             ViewerProtocolPolicy: allow-all # ALB is HTTP
